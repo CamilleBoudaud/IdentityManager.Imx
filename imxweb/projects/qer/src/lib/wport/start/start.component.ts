@@ -109,6 +109,10 @@ export class StartComponent implements OnInit {
     this.router.navigate(['newrequest']);
   }
 
+  public GoToCreateIdentity(): void {
+    this.router.navigate(['createidentity']);
+  }
+
   public GoToItshopApprovals(): void {
     this.router.navigate(['itshop', 'approvals']);
   }

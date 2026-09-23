@@ -1,0 +1,21 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  height: 100%;
+}
+
+.imx-create-identity-card {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  padding: 20px;
+}
+
+.imx-create-identity-select {
+  width: 100%;
+}
+
+.imx-create-identity-actions {
+  margin-top: 20px;
+}

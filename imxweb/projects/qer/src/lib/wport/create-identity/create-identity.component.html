@@ -1,0 +1,47 @@
+<h2 class="mat-headline-5">{{ '#LDS#Créer une identité' | translate }}</h2>
+
+<mat-card class="imx-create-identity-card">
+  <mat-form-field appearance="fill" class="imx-create-identity-select">
+    <mat-label>{{ '#LDS#Identity type' | translate }}</mat-label>
+    <mat-select
+      data-imx-identifier="create-identity-product-select"
+      [(ngModel)]="selectedProduct"
+      [compareWith]="compareProducts"
+      [disabled]="isLoadingProducts"
+      (selectionChange)="onProductSelected($event.value)"
+    >
+      @for (product of products; track product) {
+        <mat-option [value]="product">{{ product.GetEntity().GetDisplay() }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (!isLoadingProducts && products.length === 0) {
+    <p data-imx-identifier="create-identity-no-products">{{ '#LDS#No products are currently available for identity creation.' | translate }}</p>
+  }
+
+  @if (selectedProduct && columns.length > 0) {
+    <form id="createIdentityForm" [formGroup]="cartItemForm">
+      @for (column of columns; track column; let i = $index) {
+        <imx-entity-column-editor
+          [column]="column"
+          (controlCreated)="cartItemForm.addControl($event.name + '_' + i, $event.control)"
+          [attr.data-imx-identifier]="'create-identity-param-' + column.ColumnName + '_' + i"
+        >
+        </imx-entity-column-editor>
+      }
+    </form>
+  }
+</mat-card>
+
+<div class="imx-create-identity-actions">
+  <button
+    mat-flat-button
+    color="primary"
+    data-imx-identifier="create-identity-button-add-to-cart"
+    [disabled]="!selectedProduct || cartItemForm.invalid || isLoading"
+    (click)="addToCart()"
+  >
+    {{ '#LDS#Add to cart' | translate }}
+  </button>
+</div>

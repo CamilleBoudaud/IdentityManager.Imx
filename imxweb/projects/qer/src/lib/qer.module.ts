@@ -64,6 +64,7 @@ import { ShoppingCartValidationDetailModule } from './shopping-cart-validation-d
 import { TilesModule } from './tiles/tiles.module';
 import { UserModule } from './user/user.module';
 import { BusinessOwnerChartSummaryComponent } from './wport/businessowner-chartsummary/businessowner-chartsummary.component';
+import { CreateIdentityComponent } from './wport/create-identity/create-identity.component';
 import { StartComponent } from './wport/start/start.component';
 
 const routes: Routes = [
@@ -73,11 +74,17 @@ const routes: Routes = [
     canActivate: [RouteGuardService],
     resolve: [RouteGuardService],
   },
+  {
+    path: 'createidentity',
+    component: CreateIdentityComponent,
+    canActivate: [RouteGuardService],
+    resolve: [RouteGuardService],
+  },
 ];
 
 // @dynamic
 @NgModule({
-  declarations: [StartComponent, BusinessOwnerChartSummaryComponent, SettingsComponent],
+  declarations: [StartComponent, BusinessOwnerChartSummaryComponent, SettingsComponent, CreateIdentityComponent],
   imports: [
     RouterModule.forChild(routes),
     CommonModule,

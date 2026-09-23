@@ -167,6 +167,28 @@
         </button>
       </ng-template>
     </imx-icon-tile>
+
+    <imx-icon-tile
+      data-imx-identifier="start-tile-create-identity"
+      [caption]="'#LDS#Créer une identité' | translate"
+      [subtitle]="'#LDS#Créer une identité pour un nouveau collaborateur, un compte de service ou un compte administrateur.' | translate"
+      [image]="'user'"
+      [identifier]="'create-identity'"
+      *ngIf="viewReady && ShowNewRequestLink()"
+    >
+      <ng-template #ActionTemplate>
+        <button
+          mat-button
+          class="imx-button-uppercase"
+          color="primary"
+          [attr.data-imx-identifier]="'imx-start-button-create-identity'"
+          (click)="GoToCreateIdentity()"
+        >
+          <span>{{ '#LDS#Créer une identité' | translate }}</span>
+          <eui-icon class="imx-margin-left-15" icon="forward"></eui-icon>
+        </button>
+      </ng-template>
+    </imx-icon-tile>
     <imx-ext id="Dashboard-MediumTiles"></imx-ext>
   </div>
   <div class="imx-flexible-tile-row">

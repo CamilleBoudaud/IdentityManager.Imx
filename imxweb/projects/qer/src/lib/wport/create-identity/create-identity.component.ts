@@ -31,7 +31,7 @@ import { EuiLoadingService } from '@elemental-ui/core';
 
 import { PortalCartitem, PortalShopServiceitems } from '@imx-modules/imx-api-qer';
 import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
-import { imx_SessionService, SnackBarService } from 'qbm';
+import { ConfirmationService, imx_SessionService, SnackBarService } from 'qbm';
 import { ShelfService } from '../../itshop/shelf.service';
 import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrapper.interface';
 import { ParameterDataService } from '../../parameter-data/parameter-data.service';
@@ -84,6 +84,7 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     private readonly sessionService: imx_SessionService,
     private readonly busyIndicator: EuiLoadingService,
     private readonly snackbar: SnackBarService,
+    private readonly confirmationService: ConfirmationService,
   ) {}
 
   public async ngOnInit(): Promise<void> {
@@ -183,10 +184,20 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
       }
       this.submitted = true;
       await this.userModelSvc.reloadPendingItems();
-      this.router.navigate(['shoppingcart']);
     } finally {
       this.isLoading = false;
       this.busyIndicator.hide();
+    }
+
+    const goToCart = await this.confirmationService.confirmGeneral({
+      Title: '#LDS#Heading Request Submitted',
+      Message:
+        '#LDS#La demande a bien été enregistrée. Validez votre panier pour déclencher la validation RH. Vous serez ensuite notifié pour compléter les demandes de matériels et d’accès depuis l’IT Shop.',
+      ShowOk: true,
+      identifier: 'create-identity-request-submitted',
+    });
+    if (goToCart) {
+      this.router.navigate(['shoppingcart']);
     }
   }
 

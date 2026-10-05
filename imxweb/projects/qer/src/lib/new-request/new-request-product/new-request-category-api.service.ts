@@ -36,6 +36,14 @@ import { NewRequestOrchestrationService } from '../new-request-orchestration.ser
   providedIn: 'root',
 })
 export class NewRequestCategoryApiService {
+  /**
+   * UID_AccProductGroup of the "Identity Creation" category. Hidden from the generic new-request
+   * category tree/search because it is only meant to be requested through the dedicated
+   * "Create Identity" tile (imx-create-identity), which fetches its products directly by this UID
+   * and does not go through this tree.
+   */
+  private readonly uidHiddenCategories = ['2ff73067-6dc3-4561-94b9-2b58ce7a2719'];
+
   constructor(
     private readonly orchestration: NewRequestOrchestrationService,
     private readonly qerApi: QerApiService,
@@ -46,8 +54,11 @@ export class NewRequestCategoryApiService {
   }
 
   public async get(parameters: CollectionLoadParameters = {}): Promise<ExtendedTypedEntityCollection<any, unknown>> {
-    return await this.qerApi.typedClient.PortalShopCategories.Get(parameters, {
+    const result = await this.qerApi.typedClient.PortalShopCategories.Get(parameters, {
       signal: this.orchestration.serviceCategoryAbortController.signal,
     });
+
+    const data = result.Data.filter((category) => !this.uidHiddenCategories.includes(category.UID_AccProductGroup.value));
+    return { ...result, Data: data, totalCount: result.totalCount - (result.Data.length - data.length) };
   }
 }

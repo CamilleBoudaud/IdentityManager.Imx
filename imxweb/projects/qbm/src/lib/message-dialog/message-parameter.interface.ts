@@ -34,6 +34,8 @@ export interface MessageParameter {
   identifier?: string;
   Parameter?: any[];
   icon?: string;
+  /** When true, centers the dialog's action buttons instead of the default end-alignment. */
+  centerActions?: boolean;
   customButtons?: Array<{
     type?: 'warn' | 'primary' | 'accent';
     title: string;

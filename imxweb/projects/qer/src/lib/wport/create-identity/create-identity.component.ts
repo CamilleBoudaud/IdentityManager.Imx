@@ -31,7 +31,7 @@ import { EuiLoadingService } from '@elemental-ui/core';
 
 import { PortalCartitem, PortalShopServiceitems } from '@imx-modules/imx-api-qer';
 import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
-import { ConfirmationService, imx_SessionService, SnackBarService } from 'qbm';
+import { ConfirmationService, imx_SessionService, MessageDialogResult, SnackBarService } from 'qbm';
 import { ShelfService } from '../../itshop/shelf.service';
 import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrapper.interface';
 import { ParameterDataService } from '../../parameter-data/parameter-data.service';
@@ -190,10 +190,11 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     }
 
     const goToCart = await this.confirmationService.confirmGeneral({
-      Title: '#LDS#Heading Request Submitted',
+      Title: '#LDS#Demande enregistrée',
       Message:
         '#LDS#La demande a bien été enregistrée. Validez votre panier pour déclencher la validation RH. Vous serez ensuite notifié pour compléter les demandes de matériels et d’accès depuis l’IT Shop.',
-      ShowOk: true,
+      centerActions: true,
+      customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
       identifier: 'create-identity-request-submitted',
     });
     if (goToCart) {

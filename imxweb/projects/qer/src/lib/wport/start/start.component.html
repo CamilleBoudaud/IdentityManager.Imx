@@ -189,6 +189,27 @@
         </button>
       </ng-template>
     </imx-icon-tile>
+    <imx-icon-tile
+      data-imx-identifier="start-tile-hr-approvals"
+      [caption]="'#LDS#Identités à valider' | translate"
+      [subtitle]="'#LDS#Valider ou refuser les identités en attente' | translate"
+      [image]="'contactinfo'"
+      [identifier]="'hr-approvals'"
+      *ngIf="viewReady && ShowHrApprovalsTile()"
+    >
+      <ng-template #ActionTemplate>
+        <button
+          mat-button
+          class="imx-button-uppercase"
+          color="primary"
+          [attr.data-imx-identifier]="'imx-start-button-hr-approvals'"
+          (click)="GoToHrApprovals()"
+        >
+          <span>{{ '#LDS#Voir les identités à valider' | translate }}</span>
+          <eui-icon class="imx-margin-left-15" icon="forward"></eui-icon>
+        </button>
+      </ng-template>
+    </imx-icon-tile>
     <imx-ext id="Dashboard-MediumTiles"></imx-ext>
   </div>
   <div class="imx-flexible-tile-row">

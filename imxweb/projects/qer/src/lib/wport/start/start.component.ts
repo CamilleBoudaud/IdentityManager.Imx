@@ -42,12 +42,22 @@ import { DashboardService } from './dashboard.service';
   standalone: false
 })
 export class StartComponent implements OnInit {
+  /**
+   * Identifies the "RH" application role, used to gate the HR identity-approval tile.
+   * Confirmed via the live /portal/usergroups response: that endpoint returns this role as
+   * { Uid: "CCC-0EF23BCEB6E1BA42886C55C800DBBBD2", Name: "CCC_RH" } — a different Uid format than
+   * the raw UID_AERole from the PersonInAERole table, and a "CCC_" prefixed name.
+   */
+  private readonly uidHrRole = 'CCC-0EF23BCEB6E1BA42886C55C800DBBBD2';
+  private readonly identHrRole = 'CCC_RH';
+
   public userConfig: UserConfig;
   public projectConfig: QerProjectConfig & ProjectConfig;
   public pendingItems: PendingItemsType;
   public systemInfo: SystemInfo;
   public viewReady: boolean;
   public userUid: string;
+  public isHr = false;
 
   constructor(
     public readonly router: Router,
@@ -73,6 +83,8 @@ export class StartComponent implements OnInit {
       this.projectConfig = await this.projectConfigurationService.getConfig();
       this.systemInfo = await this.systemInfoService.get();
       this.userUid = (await this.sessionService.getSessionState()).UserUid || '';
+      const groups = await this.userModelSvc.getGroups();
+      this.isHr = groups.some((group) => group?.Uid === this.uidHrRole || (group?.Name ?? '').toUpperCase() === this.identHrRole);
     } finally {
       this.splash.close();
       busy.endBusy();
@@ -111,6 +123,14 @@ export class StartComponent implements OnInit {
 
   public GoToCreateIdentity(): void {
     this.router.navigate(['createidentity']);
+  }
+
+  public ShowHrApprovalsTile(): boolean {
+    return this.isHr;
+  }
+
+  public GoToHrApprovals(): void {
+    this.router.navigate(['identities-to-validate']);
   }
 
   public GoToItshopApprovals(): void {

@@ -65,7 +65,6 @@ import { TilesModule } from './tiles/tiles.module';
 import { UserModule } from './user/user.module';
 import { BusinessOwnerChartSummaryComponent } from './wport/businessowner-chartsummary/businessowner-chartsummary.component';
 import { CreateIdentityComponent } from './wport/create-identity/create-identity.component';
-import { IdentitiesToValidateComponent } from './wport/identities-to-validate/identities-to-validate.component';
 import { StartComponent } from './wport/start/start.component';
 
 const routes: Routes = [
@@ -81,17 +80,11 @@ const routes: Routes = [
     canActivate: [RouteGuardService],
     resolve: [RouteGuardService],
   },
-  {
-    path: 'identities-to-validate',
-    component: IdentitiesToValidateComponent,
-    canActivate: [RouteGuardService],
-    resolve: [RouteGuardService],
-  },
 ];
 
 // @dynamic
 @NgModule({
-  declarations: [StartComponent, BusinessOwnerChartSummaryComponent, SettingsComponent, CreateIdentityComponent, IdentitiesToValidateComponent],
+  declarations: [StartComponent, BusinessOwnerChartSummaryComponent, SettingsComponent, CreateIdentityComponent],
   imports: [
     RouterModule.forChild(routes),
     CommonModule,

@@ -25,12 +25,12 @@
  */
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormGroup } from '@angular/forms';
+import { FormControl, UntypedFormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EuiLoadingService } from '@elemental-ui/core';
 
 import { PortalCartitem, PortalShopServiceitems } from '@imx-modules/imx-api-qer';
-import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
+import { IEntityColumn, ValType } from '@imx-modules/imx-qbm-dbts';
 import { ConfirmationService, imx_SessionService, MessageDialogResult, SnackBarService } from 'qbm';
 import { ShelfService } from '../../itshop/shelf.service';
 import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrapper.interface';
@@ -72,6 +72,8 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   private hasParameters = false;
   private submitted = false;
   private selectionToken = 0;
+  /** Form controls for boolean parameters, rendered as "Oui/Non" toggles instead of the default checkbox. */
+  private readonly booleanControls = new Map<string, FormControl<boolean>>();
 
   constructor(
     private readonly router: Router,
@@ -117,6 +119,7 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     await this.discardDraft();
     this.columns = [];
     this.cartItemForm = new UntypedFormGroup({});
+    this.booleanControls.clear();
     this.hasParameters = false;
     this.selectedProduct = product;
 
@@ -204,6 +207,32 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
 
   public compareProducts = (a: PortalShopServiceitems | undefined, b: PortalShopServiceitems | undefined): boolean =>
     (a?.GetEntity().GetKeys()[0] ?? '') === (b?.GetEntity().GetKeys()[0] ?? '');
+
+  /** True for columns rendered as a boolean (Oui/Non) toggle instead of the default `imx-entity-column-editor` checkbox. */
+  public isBoolean(column: IEntityColumn): boolean {
+    return column?.GetMetadata().GetType() === ValType.Bool;
+  }
+
+  /** Label for a boolean parameter: the column's DisplayName (and translation) as configured in the database. */
+  public getFieldDisplay(column: IEntityColumn): string {
+    return column?.GetMetadata().GetDisplay() || '';
+  }
+
+  /**
+   * Lazily creates (and reuses) the FormControl backing a boolean parameter's Oui/Non toggle.
+   * Disabled (greyed out) when the user doesn't have edit rights on the column, same as the
+   * default `imx-entity-column-editor` would fall back to a read-only view in that case.
+   */
+  public getBooleanControl(column: IEntityColumn): FormControl<boolean> {
+    let control = this.booleanControls.get(column.ColumnName);
+    if (!control) {
+      control = new FormControl<boolean>({ value: !!column.GetValue(), disabled: !column.GetMetadata().CanEdit() }, { nonNullable: true });
+      control.valueChanges.subscribe((value) => column.PutValue(value));
+      this.booleanControls.set(column.ColumnName, control);
+      this.cartItemForm.addControl(column.ColumnName, control);
+    }
+    return control;
+  }
 
   private async discardDraft(): Promise<void> {
     if (this.draftEntityWrapper) {

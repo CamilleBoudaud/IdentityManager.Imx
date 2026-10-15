@@ -115,12 +115,22 @@
                       </mat-panel-title>
                     </mat-expansion-panel-header>
                     @for (cdr of cdrListPersonal; track cdr) {
-                      <imx-cdr-editor
-                        [cdr]="cdr"
-                        (readOnlyChanged)="update(cdr, cdrListPersonal)"
-                        (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
-                      >
-                      </imx-cdr-editor>
+                      @if (isBoolean(cdr)) {
+                        <div class="imx-identity-sidesheet-boolean-row" [attr.data-imx-identifier]="'cdr-editor-' + cdr?.column?.ColumnName">
+                          <span class="imx-identity-sidesheet-boolean-label">{{ getFieldDisplay(cdr) | translate }}</span>
+                          <mat-button-toggle-group [formControl]="getBooleanControl(cdr!)">
+                            <mat-button-toggle [value]="true">{{ '#LDS#Oui' | translate }}</mat-button-toggle>
+                            <mat-button-toggle [value]="false">{{ '#LDS#Non' | translate }}</mat-button-toggle>
+                          </mat-button-toggle-group>
+                        </div>
+                      } @else {
+                        <imx-cdr-editor
+                          [cdr]="cdr"
+                          (readOnlyChanged)="update(cdr, cdrListPersonal)"
+                          (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+                        >
+                        </imx-cdr-editor>
+                      }
                     }
                   </mat-expansion-panel>
                 }
@@ -132,12 +142,22 @@
                       </mat-panel-title>
                     </mat-expansion-panel-header>
                     @for (cdr of cdrListOrganizational; track cdr) {
-                      <imx-cdr-editor
-                        [cdr]="cdr"
-                        (readOnlyChanged)="update(cdr, cdrListOrganizational)"
-                        (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
-                      >
-                      </imx-cdr-editor>
+                      @if (isBoolean(cdr)) {
+                        <div class="imx-identity-sidesheet-boolean-row" [attr.data-imx-identifier]="'cdr-editor-' + cdr?.column?.ColumnName">
+                          <span class="imx-identity-sidesheet-boolean-label">{{ getFieldDisplay(cdr) | translate }}</span>
+                          <mat-button-toggle-group [formControl]="getBooleanControl(cdr!)">
+                            <mat-button-toggle [value]="true">{{ '#LDS#Oui' | translate }}</mat-button-toggle>
+                            <mat-button-toggle [value]="false">{{ '#LDS#Non' | translate }}</mat-button-toggle>
+                          </mat-button-toggle-group>
+                        </div>
+                      } @else {
+                        <imx-cdr-editor
+                          [cdr]="cdr"
+                          (readOnlyChanged)="update(cdr, cdrListOrganizational)"
+                          (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+                        >
+                        </imx-cdr-editor>
+                      }
                     }
                   </mat-expansion-panel>
                 }
@@ -149,12 +169,22 @@
                       </mat-panel-title>
                     </mat-expansion-panel-header>
                     @for (cdr of cdrListLocality; track cdr) {
-                      <imx-cdr-editor
-                        [cdr]="cdr"
-                        (readOnlyChanged)="update(cdr, cdrListLocality)"
-                        (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
-                      >
-                      </imx-cdr-editor>
+                      @if (isBoolean(cdr)) {
+                        <div class="imx-identity-sidesheet-boolean-row" [attr.data-imx-identifier]="'cdr-editor-' + cdr?.column?.ColumnName">
+                          <span class="imx-identity-sidesheet-boolean-label">{{ getFieldDisplay(cdr) | translate }}</span>
+                          <mat-button-toggle-group [formControl]="getBooleanControl(cdr!)">
+                            <mat-button-toggle [value]="true">{{ '#LDS#Oui' | translate }}</mat-button-toggle>
+                            <mat-button-toggle [value]="false">{{ '#LDS#Non' | translate }}</mat-button-toggle>
+                          </mat-button-toggle-group>
+                        </div>
+                      } @else {
+                        <imx-cdr-editor
+                          [cdr]="cdr"
+                          (readOnlyChanged)="update(cdr, cdrListLocality)"
+                          (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+                        >
+                        </imx-cdr-editor>
+                      }
                     }
                   </mat-expansion-panel>
                 }

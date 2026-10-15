@@ -34,7 +34,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
 import { FeatureConfig, PortalAdminPerson, PortalPersonReports, QerProjectConfig } from '@imx-modules/imx-api-qer';
-import { DbObjectKey } from '@imx-modules/imx-qbm-dbts';
+import { DbObjectKey, ValType } from '@imx-modules/imx-qbm-dbts';
 import {
   AuthenticationService,
   BaseCdr,
@@ -45,6 +45,7 @@ import {
   ConfirmationService,
   ExtService,
   ISessionState,
+  MessageDialogResult,
   SnackBarService,
   SystemInfoService,
   TabItem,
@@ -63,6 +64,12 @@ import { IdentitiesService } from '../identities.service';
     standalone: false
 })
 export class IdentitySidesheetComponent implements OnInit, OnDestroy {
+  /** Custom column (CCC_ApprovalState) HR uses to approve/reject an identity created via the self-service "Create Identity" flow. */
+  private static readonly approvalStateColumnName = 'CCC_ApprovalState';
+  private static readonly approvalStatePending = '1';
+  private static readonly approvalStateValidated = '0';
+  private static readonly approvalStateRejected = '3';
+
   @ViewChild('tabs') public tabs: MatTabGroup;
 
   public readonly detailsFormGroup = new FormGroup({});
@@ -81,6 +88,9 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
   private currentUserUid: string;
   private featureConfig: FeatureConfig;
   private isInactiveHasChanged = false;
+  private approvalStateOnLoad: string | undefined;
+  /** Form controls for boolean fields, rendered as "Oui/Non" toggles instead of the default checkbox. */
+  private readonly booleanControls = new Map<string, FormControl<boolean>>();
 
   constructor(
     @Inject(EUI_SIDESHEET_DATA)
@@ -214,10 +224,50 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
             ? '#LDS#Your changes have been successfully saved. It may take some time for the changes to take effect.'
             : '#LDS#The changes have been successfully saved.',
         });
+        await this.notifyApprovalStateChange();
         this.closeSidesheet();
       } finally {
         this.busyService.hide(overlayRef);
       }
+    }
+  }
+
+  private tryGetApprovalState(): string | undefined {
+    const column = CdrFactoryService.tryGetColumn(this.data.selectedIdentity.GetEntity(), IdentitySidesheetComponent.approvalStateColumnName);
+    const value = column?.GetValue();
+    return value == null ? undefined : String(value);
+  }
+
+  private async notifyApprovalStateChange(): Promise<void> {
+    const oldState = this.approvalStateOnLoad;
+    const newState = this.tryGetApprovalState();
+    if (newState == null || oldState === newState) {
+      return;
+    }
+
+    if (
+      (oldState === IdentitySidesheetComponent.approvalStatePending || oldState === IdentitySidesheetComponent.approvalStateRejected) &&
+      newState === IdentitySidesheetComponent.approvalStateValidated
+    ) {
+      await this.confirmationService.confirmGeneral({
+        Title: '#LDS#Identité validée !',
+        Message:
+          '#LDS#Le compte informatique est en cours de création. Vous recevrez un email d’ici quelques minutes contenant le login et l’adresse email.',
+        centerActions: true,
+        customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
+        identifier: 'identity-approval-validated',
+      });
+    } else if (
+      oldState === IdentitySidesheetComponent.approvalStatePending &&
+      newState === IdentitySidesheetComponent.approvalStateRejected
+    ) {
+      await this.confirmationService.confirmGeneral({
+        Title: '#LDS#Identité refusée !',
+        Message: '#LDS#L’identité est refusée, aucun compte informatique ne sera créé.',
+        centerActions: true,
+        customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
+        identifier: 'identity-approval-rejected',
+      });
     }
   }
 
@@ -311,6 +361,36 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
     list.splice(index, 1, new BaseCdr(cdrColumn));
   }
 
+  /** True for columns rendered as a boolean (Oui/Non) toggle instead of the default `imx-cdr-editor` checkbox. */
+  public isBoolean(cdr: ColumnDependentReference | undefined): boolean {
+    return cdr?.column?.GetMetadata().GetType() === ValType.Bool;
+  }
+
+  /**
+   * Label for a boolean field, same precedence as `imx-cdr-editor`'s own fields: the column's
+   * DisplayName (and translation) as configured in the database.
+   */
+  public getFieldDisplay(cdr: ColumnDependentReference | undefined): string {
+    return cdr?.display || cdr?.column?.GetMetadata().GetDisplay() || '';
+  }
+
+  /**
+   * Lazily creates (and reuses) the FormControl backing a boolean field's Oui/Non toggle.
+   * Disabled (greyed out) when the user doesn't have edit rights on the column, same as the
+   * default `imx-cdr-editor` would fall back to a read-only view in that case.
+   */
+  public getBooleanControl(cdr: ColumnDependentReference): FormControl<boolean> {
+    const columnName = cdr.column.ColumnName;
+    let control = this.booleanControls.get(columnName);
+    if (!control) {
+      control = new FormControl<boolean>({ value: !!cdr.column.GetValue(), disabled: cdr.isReadOnly() }, { nonNullable: true });
+      control.valueChanges.subscribe((value) => cdr.column.PutValue(value));
+      this.booleanControls.set(columnName, control);
+      this.detailsFormGroup.addControl(columnName, control);
+    }
+    return control;
+  }
+
   private closeSidesheet(): void {
     this.sidesheetRef.close();
   }
@@ -340,6 +420,8 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
     }
     this.detailsFormGroup.addControl(this.data.selectedIdentity.IsSecurityIncident.Column.ColumnName, this.isSecurityIncidentFormControl);
     this.detailsFormGroup.markAsPristine();
+
+    this.approvalStateOnLoad = this.tryGetApprovalState();
 
     const personalColumns = this.data.projectConfig.PersonConfig?.VI_Employee_MasterData_Attributes || [];
     this.cdrListPersonal = this.cdrFactoryService.buildCdrFromColumnList(

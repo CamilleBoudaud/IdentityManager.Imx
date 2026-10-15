@@ -29,3 +29,11 @@
     width: 100%;
   }
 }
+
+.imx-identity-sidesheet-boolean-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}

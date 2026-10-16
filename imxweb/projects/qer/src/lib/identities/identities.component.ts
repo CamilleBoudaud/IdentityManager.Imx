@@ -330,7 +330,12 @@ export class DataExplorerIdentitiesComponent implements OnInit, OnDestroy, SideN
 
   private async getPersonDetails(id: string): Promise<PortalAdminPerson | PortalPersonReports> {
     this.logger.debug(this, `Retrieving details for admin person with id ${id}`);
-    return this.isAdmin ? this.identitiesService.getAdminPerson(id) : (await this.identitiesService.getPersonInteractive(id)).Data[0];
+    // Custom: in "My responsibilities", identity admins load the identity through the admin API
+    // so that columns like UID_PersonHead are editable, as in "Data administration"
+    if (this.isAdmin || this.isPersonAdmin) {
+      return this.identitiesService.getAdminPerson(id);
+    }
+    return (await this.identitiesService.getPersonInteractive(id)).Data[0];
   }
 
   private async viewIdentity(identity: PortalAdminPerson | PortalPersonReports): Promise<void> {

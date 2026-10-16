@@ -60,6 +60,8 @@ export class MenuService {
     this.factories
       .map((factory) => factory?.(preProps, features, projectConfig, groups))
       .filter((menu) => menu && (allowEmpty || (menu.items && menu.items.length > 0)))
+      // Custom: the "Data administration" menu is hidden for all users
+      .filter((menu) => menu?.id !== 'ROOT_Data')
       .sort((item1, item2) => this.compareMenuItems(item1, item2))
       .forEach((menu) => {
         const existing = menu?.id != null && menuItems.find((item) => item.id === menu.id);

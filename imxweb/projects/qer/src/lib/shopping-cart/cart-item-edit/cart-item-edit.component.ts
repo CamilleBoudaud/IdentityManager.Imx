@@ -25,13 +25,15 @@
  */
 
 import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { AbstractControl, UntypedFormGroup } from '@angular/forms';
+import { AbstractControl, FormControl, UntypedFormGroup } from '@angular/forms';
 import { EUI_SIDESHEET_DATA, EuiSidesheetRef } from '@elemental-ui/core';
 import { Subscription } from 'rxjs';
 
 import { PortalCartitem } from '@imx-modules/imx-api-qer';
-import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
+import { CompareOperator, FilterType, IEntityColumn, ValType } from '@imx-modules/imx-qbm-dbts';
 import { ConfirmationService, EntityColumnEditorComponent } from 'qbm';
+import { clearDependentColumns, HIDE_STANDARD_FIELDS_CATEGORIES, isColumnHidden } from '../../parameter-data/hidden-columns';
+import { ServiceItemsService } from '../../service-items/service-items.service';
 import { CartItemsService } from '../cart-items.service';
 import { CartItemEditParameter } from './cart-item-edit-parameter.interface';
 
@@ -50,6 +52,12 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
   public orderReasonType: number;
 
   private justificationRequiresText: boolean = false;
+  /** IAM-Custom: Form controls for boolean parameters, rendered as "Yes/No" toggles instead of the default checkbox. */
+  private readonly booleanControls = new Map<string, FormControl<boolean>>();
+  /** IAM-Custom: names of the standard request fields (reason, priority, dates...), hidden for some products. */
+  private standardColumnNames: string[] = [];
+  /** IAM-Custom: undefined until we know whether the product belongs to HIDE_STANDARD_FIELDS_CATEGORIES. */
+  private hideStandardColumns: boolean | undefined;
 
   @ViewChildren(EntityColumnEditorComponent) editors: QueryList<EntityColumnEditorComponent>;
 
@@ -59,15 +67,21 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
     public readonly sideSheetRef: EuiSidesheetRef,
     confirmation: ConfirmationService,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly serviceItemsService: ServiceItemsService,
   ) {
     this.shoppingCartItem = this.data.entityWrapper.typedEntity;
 
     this.initColumns();
+    this.initHideStandardColumns(); // IAM-Custom
 
     if (data.updated) {
       this.subscriptions.push(
         data.updated.subscribe(() => {
           this.editors.forEach((elem) => elem.update());
+          // IAM-Custom: keep the Yes/No toggles in sync with values updated by the server
+          this.columns
+            .filter((column) => this.booleanControls.has(column.ColumnName))
+            .forEach((column) => this.booleanControls.get(column.ColumnName)?.setValue(!!column.GetValue(), { emitEvent: false }));
           changeDetector.detectChanges();
         }),
       );
@@ -128,6 +142,62 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  /** IAM-Custom: columns actually rendered, without the hidden ones (see isHidden). */
+  public get visibleColumns(): IEntityColumn[] {
+    return this.columns.filter((column) => !this.isHidden(column));
+  }
+
+  /**
+   * IAM-Custom: see isColumnHidden in parameter-data/hidden-columns.ts.
+   * The standard request fields are also hidden for products of HIDE_STANDARD_FIELDS_CATEGORIES,
+   * and while this is not known yet, so that they do not appear and then disappear.
+   */
+  public isHidden(column: IEntityColumn): boolean {
+    if (this.hideStandardColumns !== false && this.standardColumnNames.includes(column.ColumnName)) {
+      return true;
+    }
+    return isColumnHidden(column, this.columns, this.booleanControls);
+  }
+
+  /** IAM-Custom: True for columns rendered as a boolean (Yes/No) toggle instead of the default `imx-entity-column-editor` checkbox. */
+  public isBoolean(column: IEntityColumn): boolean {
+    return column?.GetMetadata().GetType() === ValType.Bool;
+  }
+
+  /** IAM-Custom: Label for a boolean parameter: the column's DisplayName (and translation) as configured in the database. */
+  public getFieldDisplay(column: IEntityColumn): string {
+    return column?.GetMetadata().GetDisplay() || '';
+  }
+
+  /**
+   * IAM-Custom: Lazily creates (and reuses) the FormControl backing a boolean parameter's Yes/No toggle.
+   * Disabled (greyed out) when the user doesn't have edit rights on the column.
+   */
+  public getBooleanControl(column: IEntityColumn): FormControl<boolean> {
+    let control = this.booleanControls.get(column.ColumnName);
+    if (!control) {
+      control = new FormControl<boolean>({ value: !!column.GetValue(), disabled: !column.GetMetadata().CanEdit() }, { nonNullable: true });
+      control.valueChanges.subscribe((value) => {
+        column.PutValue(value);
+        clearDependentColumns(column, this.columns); // IAM-Custom
+        this.removeHiddenControls(); // IAM-Custom
+      });
+      this.booleanControls.set(column.ColumnName, control);
+      this.cartItemForm.addControl(column.ColumnName, control);
+    }
+    return control;
+  }
+
+  /** IAM-Custom: a hidden column must not keep its control, otherwise it could block "Save". */
+  private removeHiddenControls(): void {
+    this.columns
+      .filter((column) => this.isHidden(column))
+      .forEach((column) => {
+        this.cartItemForm.removeControl(column.ColumnName);
+        this.booleanControls.delete(column.ColumnName);
+      });
+  }
+
   private initColumns(): void {
     let defaultColumns = [this.shoppingCartItem.OrderReason.Column, this.shoppingCartItem.UID_QERJustificationOrder.Column];
     if (!this.data.multiple) {
@@ -147,6 +217,42 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
       (this.data.entityWrapper.parameterCategoryColumns ?? []).map((item) => item.column),
       defaultColumns,
     );
+
+    // IAM-Custom: standard request fields, hidden for the products of HIDE_STANDARD_FIELDS_CATEGORIES (see isHidden)
+    this.standardColumnNames = defaultColumns.map((column) => column.ColumnName);
+  }
+
+  /**
+   * IAM-Custom: checks whether the requested product belongs to one of HIDE_STANDARD_FIELDS_CATEGORIES,
+   * by loading this product only (same filter as ServiceItemsService.getServiceItem) within each category.
+   */
+  private async initHideStandardColumns(): Promise<void> {
+    try {
+      for (const uidAccProductGroup of HIDE_STANDARD_FIELDS_CATEGORIES) {
+        const serviceItems = await this.serviceItemsService.get({
+          UID_AccProductGroup: uidAccProductGroup,
+          IncludeChildCategories: true,
+          UID_Person: this.shoppingCartItem.UID_PersonOrdered.value,
+          filter: [
+            {
+              ColumnName: 'UID_AccProduct',
+              Type: FilterType.Compare,
+              CompareOp: CompareOperator.Equal,
+              Value1: this.shoppingCartItem.UID_AccProduct.value,
+            },
+          ],
+        });
+        if ((serviceItems?.Data?.length ?? 0) > 0) {
+          this.hideStandardColumns = true;
+          return;
+        }
+      }
+      this.hideStandardColumns = false;
+    } catch (error) {
+      // If the categories cannot be loaded, the standard fields are shown as in the OOB portal
+      console.warn('IAM-Custom: cannot check the service category of the cart item', error);
+      this.hideStandardColumns = false;
+    }
   }
 
   private mergeColumns(columns: IEntityColumn[], columnsToAdd: IEntityColumn[]): IEntityColumn[] {

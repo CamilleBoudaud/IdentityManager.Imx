@@ -25,7 +25,7 @@
  */
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, UntypedFormGroup } from '@angular/forms';
+import { AbstractControl, FormControl, UntypedFormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EuiLoadingService } from '@elemental-ui/core';
 
@@ -34,6 +34,7 @@ import { IEntityColumn, ValType } from '@imx-modules/imx-qbm-dbts';
 import { ConfirmationService, imx_SessionService, MessageDialogResult, SnackBarService } from 'qbm';
 import { ShelfService } from '../../itshop/shelf.service';
 import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrapper.interface';
+import { clearDependentColumns, findColumn, IS_NO_PROFILE_TEMPLATE_COLUMN, isColumnHidden } from '../../parameter-data/hidden-columns';
 import { ParameterDataService } from '../../parameter-data/parameter-data.service';
 import { PersonService } from '../../person/person.service';
 import { ServiceItemsService } from '../../service-items/service-items.service';
@@ -165,7 +166,13 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
         await this.discardDraft();
         return;
       }
-      this.columns = (this.draftEntityWrapper.parameterCategoryColumns ?? []).map((item) => item.column);
+      const columns = (this.draftEntityWrapper.parameterCategoryColumns ?? []).map((item) => item.column);
+      // IAM-Custom: the "profile template" question starts on No, so CCC_ProfilTemplate is hidden at first
+      await findColumn(columns, IS_NO_PROFILE_TEMPLATE_COLUMN)?.PutValue(false);
+      if (token !== this.selectionToken) {
+        return;
+      }
+      this.columns = columns;
     } finally {
       if (token === this.selectionToken) {
         this.isLoading = false;
@@ -208,6 +215,24 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   public compareProducts = (a: PortalShopServiceitems | undefined, b: PortalShopServiceitems | undefined): boolean =>
     (a?.GetEntity().GetKeys()[0] ?? '') === (b?.GetEntity().GetKeys()[0] ?? '');
 
+  /**
+   * IAM-Custom: deferred like in BulkItemComponent.addControl: adding a control during change detection
+   * changes "cartItemForm.invalid" after it was checked (NG0100 ExpressionChangedAfterItHasBeenCheckedError).
+   */
+  public addControl(name: string, control: AbstractControl): void {
+    setTimeout(() => this.cartItemForm.addControl(name, control));
+  }
+
+  /** IAM-Custom: columns actually rendered, without the hidden ones (see isHidden). */
+  public get visibleColumns(): IEntityColumn[] {
+    return this.columns.filter((column) => !this.isHidden(column));
+  }
+
+  /** IAM-Custom: see isColumnHidden in parameter-data/hidden-columns.ts */
+  public isHidden(column: IEntityColumn): boolean {
+    return isColumnHidden(column, this.columns, this.booleanControls);
+  }
+
   /** True for columns rendered as a boolean (Oui/Non) toggle instead of the default `imx-entity-column-editor` checkbox. */
   public isBoolean(column: IEntityColumn): boolean {
     return column?.GetMetadata().GetType() === ValType.Bool;
@@ -227,11 +252,25 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     let control = this.booleanControls.get(column.ColumnName);
     if (!control) {
       control = new FormControl<boolean>({ value: !!column.GetValue(), disabled: !column.GetMetadata().CanEdit() }, { nonNullable: true });
-      control.valueChanges.subscribe((value) => column.PutValue(value));
+      control.valueChanges.subscribe((value) => {
+        column.PutValue(value);
+        clearDependentColumns(column, this.columns); // IAM-Custom
+        this.removeHiddenControls(); // IAM-Custom
+      });
       this.booleanControls.set(column.ColumnName, control);
       this.cartItemForm.addControl(column.ColumnName, control);
     }
     return control;
+  }
+
+  /** IAM-Custom: a hidden column must not keep its control, otherwise it could block "Add to cart". */
+  private removeHiddenControls(): void {
+    this.columns
+      .filter((column) => this.isHidden(column))
+      .forEach((column) => {
+        this.cartItemForm.removeControl(column.ColumnName);
+        this.booleanControls.delete(column.ColumnName);
+      });
   }
 
   private async discardDraft(): Promise<void> {

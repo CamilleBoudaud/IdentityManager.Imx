@@ -25,15 +25,28 @@
     }
 
     <form id="personalDataForm" [formGroup]="cartItemForm">
-      @for (column of columns; track column; let i = $index) {
-        <imx-entity-column-editor
-          [column]="column"
-          [isMandatory]="isMandatory(column)"
-          (controlCreated)="addControlToCartItemForm($event.name + '_' + i, $event.control)"
-          (pendingChanged)="onPendingChanged($event)"
-          [attr.data-imx-identifier]="'cartitem-edit-' + column.ColumnName + '_' + i"
-        >
-        </imx-entity-column-editor>
+      <!-- IAM-Custom: hidden columns filtered out, OOB: @for (column of columns; track column; let i = $index) -->
+      @for (column of visibleColumns; track column; let i = $index) {
+        <!-- IAM-Custom: boolean parameters rendered as Yes/No toggles, OOB: imx-entity-column-editor only -->
+        @if (isBoolean(column)) {
+          <div class="imx-cart-item-edit-boolean-row" [attr.data-imx-identifier]="'cartitem-edit-' + column.ColumnName + '_' + i">
+            <span class="imx-cart-item-edit-boolean-label">{{ getFieldDisplay(column) | translate }}</span>
+            <mat-button-toggle-group [formControl]="getBooleanControl(column)">
+              <mat-button-toggle [value]="true">{{ '#LDS#Oui' | translate }}</mat-button-toggle>
+              <mat-button-toggle [value]="false">{{ '#LDS#Non' | translate }}</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+        } @else {
+          <!-- IAM-Custom: control registered under its column name (used by removeHiddenControls), OOB: $event.name + '_' + i -->
+          <imx-entity-column-editor
+            [column]="column"
+            [isMandatory]="isMandatory(column)"
+            (controlCreated)="addControlToCartItemForm($event.name, $event.control)"
+            (pendingChanged)="onPendingChanged($event)"
+            [attr.data-imx-identifier]="'cartitem-edit-' + column.ColumnName + '_' + i"
+          >
+          </imx-entity-column-editor>
+        }
       }
     </form>
   </div>

@@ -22,7 +22,8 @@
 
   @if (selectedProduct && columns.length > 0) {
     <form id="createIdentityForm" [formGroup]="cartItemForm">
-      @for (column of columns; track column; let i = $index) {
+      <!-- IAM-Custom: hidden columns filtered out, OOB: @for (column of columns; track column; let i = $index) -->
+      @for (column of visibleColumns; track column; let i = $index) {
         @if (isBoolean(column)) {
           <div class="imx-create-identity-boolean-row" [attr.data-imx-identifier]="'create-identity-param-' + column.ColumnName + '_' + i">
             <span class="imx-create-identity-boolean-label">{{ getFieldDisplay(column) | translate }}</span>
@@ -34,7 +35,7 @@
         } @else {
           <imx-entity-column-editor
             [column]="column"
-            (controlCreated)="cartItemForm.addControl($event.name + '_' + i, $event.control)"
+            (controlCreated)="addControl($event.name, $event.control)"
             [attr.data-imx-identifier]="'create-identity-param-' + column.ColumnName + '_' + i"
           >
           </imx-entity-column-editor>

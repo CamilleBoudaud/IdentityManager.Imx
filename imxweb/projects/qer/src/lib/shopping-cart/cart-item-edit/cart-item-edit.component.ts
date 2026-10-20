@@ -32,7 +32,13 @@ import { Subscription } from 'rxjs';
 import { PortalCartitem } from '@imx-modules/imx-api-qer';
 import { CompareOperator, FilterType, IEntityColumn, ValType } from '@imx-modules/imx-qbm-dbts';
 import { ConfirmationService, EntityColumnEditorComponent } from 'qbm';
-import { clearDependentColumns, HIDE_STANDARD_FIELDS_CATEGORIES, isColumnHidden } from '../../parameter-data/hidden-columns';
+import {
+  clearDependentColumns,
+  CONTRACT_TYPE_COLUMN,
+  findColumn,
+  HIDE_STANDARD_FIELDS_CATEGORIES,
+  isColumnHidden,
+} from '../../parameter-data/hidden-columns';
 import { ServiceItemsService } from '../../service-items/service-items.service';
 import { CartItemsService } from '../cart-items.service';
 import { CartItemEditParameter } from './cart-item-edit-parameter.interface';
@@ -58,6 +64,8 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
   private standardColumnNames: string[] = [];
   /** IAM-Custom: undefined until we know whether the product belongs to HIDE_STANDARD_FIELDS_CATEGORIES. */
   private hideStandardColumns: boolean | undefined;
+  /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
+  private contractTypeSubscription: { unsubscribe: () => void } | undefined;
 
   @ViewChildren(EntityColumnEditorComponent) editors: QueryList<EntityColumnEditorComponent>;
 
@@ -73,6 +81,8 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
 
     this.initColumns();
     this.initHideStandardColumns(); // IAM-Custom
+    // IAM-Custom: CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
+    this.contractTypeSubscription = findColumn(this.columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
 
     if (data.updated) {
       this.subscriptions.push(
@@ -111,6 +121,7 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
+    this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
   }
 
   public onPendingChanged(value: boolean) {

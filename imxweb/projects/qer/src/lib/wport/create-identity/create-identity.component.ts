@@ -34,7 +34,13 @@ import { IEntityColumn, ValType } from '@imx-modules/imx-qbm-dbts';
 import { ConfirmationService, imx_SessionService, MessageDialogResult, SnackBarService } from 'qbm';
 import { ShelfService } from '../../itshop/shelf.service';
 import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrapper.interface';
-import { clearDependentColumns, findColumn, IS_NO_PROFILE_TEMPLATE_COLUMN, isColumnHidden } from '../../parameter-data/hidden-columns';
+import {
+  clearDependentColumns,
+  CONTRACT_TYPE_COLUMN,
+  findColumn,
+  IS_NO_PROFILE_TEMPLATE_COLUMN,
+  isColumnHidden,
+} from '../../parameter-data/hidden-columns';
 import { ParameterDataService } from '../../parameter-data/parameter-data.service';
 import { PersonService } from '../../person/person.service';
 import { ServiceItemsService } from '../../service-items/service-items.service';
@@ -75,6 +81,8 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   private selectionToken = 0;
   /** Form controls for boolean parameters, rendered as "Oui/Non" toggles instead of the default checkbox. */
   private readonly booleanControls = new Map<string, FormControl<boolean>>();
+  /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
+  private contractTypeSubscription: { unsubscribe: () => void } | undefined;
 
   constructor(
     private readonly router: Router,
@@ -108,6 +116,7 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   }
 
   public ngOnDestroy(): void {
+    this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
     if (!this.submitted) {
       // Fire and forget: best effort cleanup of an abandoned draft cart item.
       this.discardDraft();
@@ -121,6 +130,8 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     this.columns = [];
     this.cartItemForm = new UntypedFormGroup({});
     this.booleanControls.clear();
+    this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
+    this.contractTypeSubscription = undefined;
     this.hasParameters = false;
     this.selectedProduct = product;
 
@@ -173,6 +184,8 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
         return;
       }
       this.columns = columns;
+      // IAM-Custom: CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
+      this.contractTypeSubscription = findColumn(columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
     } finally {
       if (token === this.selectionToken) {
         this.isLoading = false;

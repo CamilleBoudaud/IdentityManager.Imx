@@ -10,6 +10,12 @@ import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
 export const PROFILE_TEMPLATE_COLUMN = 'ccc_profiltemplate';
 export const IS_NO_PROFILE_TEMPLATE_COLUMN = 'ccc_isnoprofiletemplate';
 
+/** IAM-Custom: CCC_Tutor is only shown when CCC_ContractType is Alternant ("P") or Stagiaire ("A"). */
+export const TUTOR_COLUMN = 'ccc_tutor';
+export const CONTRACT_TYPE_COLUMN = 'ccc_contracttype';
+// Both the values and the labels are accepted, the request property script compares the labels ("Alternant", "Stagiaire")
+const TRAINEESHIP_CONTRACT_TYPES = ['p', 'a', 'alternant', 'stagiaire'];
+
 /**
  * IAM-Custom: service categories (UID_AccProductGroup) whose products are requested without the standard
  * request fields (reason, standard reason, priority, dates) in the shopping cart. Child categories are included.
@@ -28,7 +34,8 @@ export function findColumn(columns: IEntityColumn[], columnName: string): IEntit
 
 /**
  * IAM-Custom: a column is hidden when its display starts with "hidden_",
- * CCC_ProfilTemplate is hidden unless CCC_IsNoProfileTemplate is true.
+ * CCC_ProfilTemplate is hidden unless CCC_IsNoProfileTemplate is true,
+ * CCC_Tutor is hidden unless CCC_ContractType is Alternant or Stagiaire.
  * @param booleanControls the Yes/No toggle controls, they hold the latest value while the column may not be updated yet (PutValue is async)
  */
 export function isColumnHidden(column: IEntityColumn, columns: IEntityColumn[], booleanControls: Map<string, FormControl<boolean>>): boolean {
@@ -39,6 +46,10 @@ export function isColumnHidden(column: IEntityColumn, columns: IEntityColumn[], 
     const driver = findColumn(columns, IS_NO_PROFILE_TEMPLATE_COLUMN);
     const value = driver ? (booleanControls.get(driver.ColumnName)?.value ?? driver.GetValue()) : undefined;
     return !(value === true || `${value}`.toLowerCase() === 'true');
+  }
+  if (column.ColumnName.toLowerCase() === TUTOR_COLUMN) {
+    const contractType = `${findColumn(columns, CONTRACT_TYPE_COLUMN)?.GetValue() ?? ''}`.trim().toLowerCase();
+    return !TRAINEESHIP_CONTRACT_TYPES.includes(contractType);
   }
   return false;
 }

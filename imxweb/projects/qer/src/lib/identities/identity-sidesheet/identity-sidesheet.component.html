@@ -1,4 +1,9 @@
-<mat-tab-group mat-stretch-tabs="false" #tabs>
+<!--
+  IAM-Custom: preserveContent keeps the content of the visited tabs. Without it, leaving "Overview" destroyed its nested
+  tab group, MatTabGroup then reselected the previous tab while switching (NG0100 on MatTabGroup when clicking "Main data").
+  OOB: <mat-tab-group mat-stretch-tabs="false" #tabs>
+-->
+<mat-tab-group mat-stretch-tabs="false" #tabs [preserveContent]="true">
   <mat-tab>
     <ng-template mat-tab-label>
       <span translate>#LDS#Overview</span>
@@ -75,6 +80,12 @@
               </eui-badge>
             }
           </div>
+          <!--
+            IAM-Custom: the editors register their control with setControl instead of addControl. The tab content (matTabContent)
+            is created again when the tab is shown again, addControl ignores the new control when the name already exists,
+            so the form kept the old one and never became dirty (Save stayed disabled).
+            OOB: (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+          -->
           <form [formGroup]="detailsFormGroup">
             <div class="imx-flex-toggle-container">
               @if (data.isAdmin) {
@@ -127,7 +138,7 @@
                         <imx-cdr-editor
                           [cdr]="cdr"
                           (readOnlyChanged)="update(cdr, cdrListPersonal)"
-                          (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+                          (controlCreated)="detailsFormGroup.setControl(cdr?.column?.ColumnName ?? '', $event)"
                         >
                         </imx-cdr-editor>
                       }
@@ -154,7 +165,7 @@
                         <imx-cdr-editor
                           [cdr]="cdr"
                           (readOnlyChanged)="update(cdr, cdrListOrganizational)"
-                          (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+                          (controlCreated)="detailsFormGroup.setControl(cdr?.column?.ColumnName ?? '', $event)"
                         >
                         </imx-cdr-editor>
                       }
@@ -181,7 +192,7 @@
                         <imx-cdr-editor
                           [cdr]="cdr"
                           (readOnlyChanged)="update(cdr, cdrListLocality)"
-                          (controlCreated)="detailsFormGroup.addControl(cdr?.column?.ColumnName ?? '', $event)"
+                          (controlCreated)="detailsFormGroup.setControl(cdr?.column?.ColumnName ?? '', $event)"
                         >
                         </imx-cdr-editor>
                       }

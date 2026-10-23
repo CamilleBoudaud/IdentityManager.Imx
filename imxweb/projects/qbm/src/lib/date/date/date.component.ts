@@ -34,6 +34,12 @@ import { ClassloggerService } from '../../classlogger/classlogger.service';
 import { DateParser } from './date-parser';
 
 /**
+ * IAM-Custom: error key a validator of the outside control can set, with an LDS message as value,
+ * e.g. { [DATE_CUSTOM_ERROR]: '#LDS#...' }. The message is then displayed under the date field.
+ */
+export const DATE_CUSTOM_ERROR = 'imxCustomError';
+
+/**
  * A component for viewing / editing date and time values.
  *
  * The value to be displayed/edited needs to be supplied as
@@ -207,6 +213,12 @@ export class DateComponent implements OnInit, OnDestroy {
       return '#LDS#This field is mandatory.';
     }
 
+    // IAM-Custom: message set by a validator of the outside control (see DATE_CUSTOM_ERROR)
+    const customError = this.control?.errors?.[DATE_CUSTOM_ERROR];
+    if (typeof customError === 'string') {
+      return customError;
+    }
+
     return '';
   }
 
@@ -228,6 +240,8 @@ export class DateComponent implements OnInit, OnDestroy {
         this.handleControlChanged();
       }),
     );
+    // IAM-Custom: the outside control is validated after the text field, so the text field is revalidated to show its custom error
+    this.subscriptions.push(this.control.statusChanges.subscribe(() => this.shadowText.updateValueAndValidity({ emitEvent: false })));
     this.subscriptions.push(this.shadowText.valueChanges.subscribe((x) => this.handleShadowTextChanged()));
     this.subscriptions.push(this.shadowTime.valueChanges.subscribe((x) => this.handleShadowTimeChanged()));
     this.subscriptions.push(this.shadowDate.valueChanges.subscribe((x) => this.handleShadowDateChanged()));
@@ -313,6 +327,8 @@ export class DateComponent implements OnInit, OnDestroy {
     }
 
     validators.push((control) => this.validateTextInDateRange(control.value as string));
+    // IAM-Custom: the text field is shown as invalid when the outside control has a custom error (see DATE_CUSTOM_ERROR)
+    validators.push(() => (typeof this.control?.errors?.[DATE_CUSTOM_ERROR] === 'string' ? { [DATE_CUSTOM_ERROR]: true } : null));
 
     this.shadowText.setValidators(validators);
     this.control.addValidators((control) => this.validateMomentInDateRange(control.value as Moment));

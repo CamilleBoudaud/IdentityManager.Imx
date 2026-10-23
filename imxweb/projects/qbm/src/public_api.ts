@@ -168,7 +168,7 @@ export { TreeDatabase } from './lib/data-tree/tree-database';
 export { TreeNode, TreeNodeInfo } from './lib/data-tree/tree-node';
 export { TreeNodeResultParameter } from './lib/data-tree/tree-node-result-parameter.interface';
 export { DateModule } from './lib/date/date.module';
-export { DateComponent } from './lib/date/date/date.component';
+export { DATE_CUSTOM_ERROR, DateComponent } from './lib/date/date/date.component';
 export { LocalizedDatePipe } from './lib/date/localized-date.pipe';
 export { ShortDatePipe } from './lib/date/short-date.pipe';
 export { DisableControlDirective } from './lib/disable-control/disable-control.directive';

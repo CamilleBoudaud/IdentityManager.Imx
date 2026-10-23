@@ -37,6 +37,9 @@ import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrap
 import {
   clearDependentColumns,
   CONTRACT_TYPE_COLUMN,
+  ENTRY_DATE_COLUMN,
+  EXIT_DATE_COLUMN,
+  exitDateValidator,
   findColumn,
   IS_NO_PROFILE_TEMPLATE_COLUMN,
   isColumnHidden,
@@ -83,6 +86,9 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   private readonly booleanControls = new Map<string, FormControl<boolean>>();
   /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
   private contractTypeSubscription: { unsubscribe: () => void } | undefined;
+  /** IAM-Custom: ExitDate editor control, revalidated when EntryDate changes (see exitDateValidator). */
+  private exitDateControl: AbstractControl | undefined;
+  private entryDateSubscription: { unsubscribe: () => void } | undefined;
 
   constructor(
     private readonly router: Router,
@@ -117,6 +123,7 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
 
   public ngOnDestroy(): void {
     this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
+    this.entryDateSubscription?.unsubscribe(); // IAM-Custom
     if (!this.submitted) {
       // Fire and forget: best effort cleanup of an abandoned draft cart item.
       this.discardDraft();
@@ -132,6 +139,9 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     this.booleanControls.clear();
     this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
     this.contractTypeSubscription = undefined;
+    this.entryDateSubscription?.unsubscribe(); // IAM-Custom
+    this.entryDateSubscription = undefined;
+    this.exitDateControl = undefined;
     this.hasParameters = false;
     this.selectedProduct = product;
 
@@ -186,6 +196,10 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
       this.columns = columns;
       // IAM-Custom: CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
       this.contractTypeSubscription = findColumn(columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
+      // IAM-Custom: ExitDate is checked again against the new EntryDate
+      this.entryDateSubscription = findColumn(columns, ENTRY_DATE_COLUMN)?.ColumnChanged.subscribe(() =>
+        this.exitDateControl?.updateValueAndValidity(),
+      );
     } finally {
       if (token === this.selectionToken) {
         this.isLoading = false;
@@ -233,6 +247,11 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
    * changes "cartItemForm.invalid" after it was checked (NG0100 ExpressionChangedAfterItHasBeenCheckedError).
    */
   public addControl(name: string, control: AbstractControl): void {
+    // IAM-Custom: an ExitDate before EntryDate or on the same day is refused, with a message under the field
+    if (name.toLowerCase() === EXIT_DATE_COLUMN) {
+      control.addValidators(exitDateValidator(this.columns));
+      this.exitDateControl = control;
+    }
     setTimeout(() => this.cartItemForm.addControl(name, control));
   }
 

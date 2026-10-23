@@ -1,10 +1,12 @@
 /*
- * IAM-Custom: visibility rules for request parameters, shared by the "Create Identity" page
+ * IAM-Custom: visibility and validation rules for request parameters, shared by the "Create Identity" page
  * (CreateIdentityComponent) and the shopping cart item editor (CartItemEditComponent).
  */
 
-import { FormControl } from '@angular/forms';
+import { FormControl, ValidatorFn } from '@angular/forms';
 import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
+import moment from 'moment';
+import { DATE_CUSTOM_ERROR } from 'qbm';
 
 /** IAM-Custom: CCC_ProfilTemplate is only shown when CCC_IsNoProfileTemplate is set to true. */
 export const PROFILE_TEMPLATE_COLUMN = 'ccc_profiltemplate';
@@ -15,6 +17,10 @@ export const TUTOR_COLUMN = 'ccc_tutor';
 export const CONTRACT_TYPE_COLUMN = 'ccc_contracttype';
 // Both the values and the labels are accepted, the request property script compares the labels ("Alternant", "Stagiaire")
 const TRAINEESHIP_CONTRACT_TYPES = ['p', 'a', 'alternant', 'stagiaire'];
+
+/** IAM-Custom: ExitDate must be at least one day after EntryDate. */
+export const ENTRY_DATE_COLUMN = 'entrydate';
+export const EXIT_DATE_COLUMN = 'exitdate';
 
 /**
  * IAM-Custom: service categories (UID_AccProductGroup) whose products are requested without the standard
@@ -52,6 +58,23 @@ export function isColumnHidden(column: IEntityColumn, columns: IEntityColumn[], 
     return !TRAINEESHIP_CONTRACT_TYPES.includes(contractType);
   }
   return false;
+}
+
+/**
+ * IAM-Custom: validator for the ExitDate editor, refuses a date before EntryDate or on the same day.
+ * The message is displayed under the date field by DateComponent (see DATE_CUSTOM_ERROR).
+ */
+export function exitDateValidator(columns: IEntityColumn[]): ValidatorFn {
+  return (control) => {
+    const entryDate = findColumn(columns, ENTRY_DATE_COLUMN)?.GetValue();
+    const exitDate = control.value;
+    if (!entryDate || !exitDate) {
+      return null;
+    }
+    return moment(exitDate).isSameOrBefore(moment(entryDate), 'day')
+      ? { [DATE_CUSTOM_ERROR]: "#LDS#Veuillez choisir une date postérieure à la date d'arrivée." }
+      : null;
+  };
 }
 
 /** IAM-Custom: clears CCC_ProfilTemplate whenever CCC_IsNoProfileTemplate changes. */

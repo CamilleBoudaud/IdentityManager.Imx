@@ -30,7 +30,8 @@
 
 export const environment = {
   production: false,
-  clientUrl: 'http://localhost:8182',
+  // Changed for local development: points to the local API Server (default was 'http://localhost:8182')
+  clientUrl: 'https://localhost/ApiServer',
   appName: 'qer-app-portal',
   appVersion: '1.0.0',
 };

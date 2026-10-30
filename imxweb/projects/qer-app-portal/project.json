@@ -166,30 +166,30 @@
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
       "options": {
-        "browserTarget": "qer-app-portal:build"
+        "buildTarget": "qer-app-portal:build"
       },
       "configurations": {
         "production": {
-          "browserTarget": "qer-app-portal:build:production"
+          "buildTarget": "qer-app-portal:build:production"
         },
         "development": {
-          "browserTarget": "qer-app-portal:build:development"
+          "buildTarget": "qer-app-portal:build:development"
         },
         "remote-dev": {
-          "browserTarget": "qer-app-portal:build:remote-dev"
+          "buildTarget": "qer-app-portal:build:remote-dev"
         },
         "remote-qs": {
-          "browserTarget": "qer-app-portal:build:remote-qs"
+          "buildTarget": "qer-app-portal:build:remote-qs"
         },
         "es5": {
-          "browserTarget": "qer-app-portal:build:es5"
+          "buildTarget": "qer-app-portal:build:es5"
         }
       }
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
       "options": {
-        "browserTarget": "qer-app-portal:build"
+        "buildTarget": "qer-app-portal:build"
       }
     },
     "test": {

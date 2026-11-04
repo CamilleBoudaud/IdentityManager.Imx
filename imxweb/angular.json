@@ -1302,7 +1302,9 @@
               "buildTarget": "qer-app-portal:build:production"
             },
             "development": {
-              "buildTarget": "qer-app-portal:build:development"
+              "buildTarget": "qer-app-portal:build:development",
+              "ssl": true,
+              "proxyConfig": "proxy.conf.json"
             },
             "remote-dev": {
               "buildTarget": "qer-app-portal:build:remote-dev"

@@ -1,0 +1,8 @@
+{
+  "/ApiServer": {
+    "target": "https://localhost",
+    "secure": false,
+    "changeOrigin": true,
+    "cookiePathRewrite": { "/ApiServer/": "/" }
+  }
+}

@@ -30,8 +30,9 @@
 
 export const environment = {
   production: false,
-  // Changed for local development: points to the local API Server (default was 'http://localhost:8182')
-  clientUrl: 'https://localhost/ApiServer',
+  // Changed for local development: points to the local API Server through the dev server proxy (imxweb/proxy.conf.json),
+  // so the XSRF-TOKEN cookie is readable by the portal (default was 'http://localhost:8182')
+  clientUrl: 'https://localhost:4200/ApiServer',
   appName: 'qer-app-portal',
   appVersion: '1.0.0',
 };

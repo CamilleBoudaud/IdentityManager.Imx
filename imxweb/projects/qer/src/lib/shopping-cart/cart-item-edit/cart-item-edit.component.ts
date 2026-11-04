@@ -33,9 +33,9 @@ import { PortalCartitem } from '@imx-modules/imx-api-qer';
 import { CompareOperator, FilterType, IEntityColumn, ValType } from '@imx-modules/imx-qbm-dbts';
 import { ConfirmationService, EntityColumnEditorComponent } from 'qbm';
 import {
-  clearDependentColumns,
-  CONTRACT_TYPE_COLUMN,
-  findColumn,
+  // clearDependentColumns, // IAM-Custom (CCC disabled)
+  // CONTRACT_TYPE_COLUMN, // IAM-Custom (CCC disabled)
+  // findColumn, // IAM-Custom (CCC disabled)
   HIDE_STANDARD_FIELDS_CATEGORIES,
   isColumnHidden,
 } from '../../parameter-data/hidden-columns';
@@ -64,8 +64,9 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
   private standardColumnNames: string[] = [];
   /** IAM-Custom: undefined until we know whether the product belongs to HIDE_STANDARD_FIELDS_CATEGORIES. */
   private hideStandardColumns: boolean | undefined;
-  /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
-  private contractTypeSubscription: { unsubscribe: () => void } | undefined;
+  // IAM-Custom (CCC disabled)
+  // /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
+  // private contractTypeSubscription: { unsubscribe: () => void } | undefined;
 
   @ViewChildren(EntityColumnEditorComponent) editors: QueryList<EntityColumnEditorComponent>;
 
@@ -81,8 +82,8 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
 
     this.initColumns();
     this.initHideStandardColumns(); // IAM-Custom
-    // IAM-Custom: CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
-    this.contractTypeSubscription = findColumn(this.columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
+    // IAM-Custom (CCC disabled): CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
+    // this.contractTypeSubscription = findColumn(this.columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
 
     if (data.updated) {
       this.subscriptions.push(
@@ -121,7 +122,7 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
-    this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
+    // this.contractTypeSubscription?.unsubscribe(); // IAM-Custom (CCC disabled)
   }
 
   public onPendingChanged(value: boolean) {
@@ -190,7 +191,7 @@ export class CartItemEditComponent implements OnInit, OnDestroy {
       control = new FormControl<boolean>({ value: !!column.GetValue(), disabled: !column.GetMetadata().CanEdit() }, { nonNullable: true });
       control.valueChanges.subscribe((value) => {
         column.PutValue(value);
-        clearDependentColumns(column, this.columns); // IAM-Custom
+        // clearDependentColumns(column, this.columns); // IAM-Custom (CCC disabled)
         this.removeHiddenControls(); // IAM-Custom
       });
       this.booleanControls.set(column.ColumnName, control);

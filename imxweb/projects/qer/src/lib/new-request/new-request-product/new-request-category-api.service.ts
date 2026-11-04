@@ -42,7 +42,7 @@ export class NewRequestCategoryApiService {
    * "Create Identity" tile (imx-create-identity), which fetches its products directly by this UID
    * and does not go through this tree.
    */
-  private readonly uidHiddenCategories = ['2ff73067-6dc3-4561-94b9-2b58ce7a2719'];
+  private readonly uidHiddenCategories = ['93d6a314-488b-4de8-a1f1-2a4d7e49358d'];
 
   constructor(
     private readonly orchestration: NewRequestOrchestrationService,

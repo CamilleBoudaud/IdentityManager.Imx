@@ -35,13 +35,13 @@ import { ConfirmationService, imx_SessionService, MessageDialogResult, SnackBarS
 import { ShelfService } from '../../itshop/shelf.service';
 import { ExtendedEntityWrapper } from '../../parameter-data/extended-entity-wrapper.interface';
 import {
-  clearDependentColumns,
-  CONTRACT_TYPE_COLUMN,
+  // clearDependentColumns, // IAM-Custom (CCC disabled)
+  // CONTRACT_TYPE_COLUMN, // IAM-Custom (CCC disabled)
   ENTRY_DATE_COLUMN,
   EXIT_DATE_COLUMN,
   exitDateValidator,
   findColumn,
-  IS_NO_PROFILE_TEMPLATE_COLUMN,
+  // IS_NO_PROFILE_TEMPLATE_COLUMN, // IAM-Custom (CCC disabled)
   isColumnHidden,
 } from '../../parameter-data/hidden-columns';
 import { ParameterDataService } from '../../parameter-data/parameter-data.service';
@@ -67,7 +67,7 @@ import { UserModelService } from '../../user/user-model.service';
 })
 export class CreateIdentityComponent implements OnInit, OnDestroy {
   /** UID_AccProductGroup of the "Identity Creation" service category. */
-  private readonly uidIdentityCreationCategory = '2ff73067-6dc3-4561-94b9-2b58ce7a2719';
+  private readonly uidIdentityCreationCategory = '93d6a314-488b-4de8-a1f1-2a4d7e49358d';
 
   public products: PortalShopServiceitems[] = [];
   public selectedProduct: PortalShopServiceitems | undefined;
@@ -84,8 +84,9 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   private selectionToken = 0;
   /** Form controls for boolean parameters, rendered as "Oui/Non" toggles instead of the default checkbox. */
   private readonly booleanControls = new Map<string, FormControl<boolean>>();
-  /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
-  private contractTypeSubscription: { unsubscribe: () => void } | undefined;
+  // IAM-Custom (CCC disabled)
+  // /** IAM-Custom: listener on CCC_ContractType, which is not a Yes/No toggle. */
+  // private contractTypeSubscription: { unsubscribe: () => void } | undefined;
   /** IAM-Custom: ExitDate editor control, revalidated when EntryDate changes (see exitDateValidator). */
   private exitDateControl: AbstractControl | undefined;
   private entryDateSubscription: { unsubscribe: () => void } | undefined;
@@ -122,7 +123,7 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
   }
 
   public ngOnDestroy(): void {
-    this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
+    // this.contractTypeSubscription?.unsubscribe(); // IAM-Custom (CCC disabled)
     this.entryDateSubscription?.unsubscribe(); // IAM-Custom
     if (!this.submitted) {
       // Fire and forget: best effort cleanup of an abandoned draft cart item.
@@ -137,8 +138,8 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
     this.columns = [];
     this.cartItemForm = new UntypedFormGroup({});
     this.booleanControls.clear();
-    this.contractTypeSubscription?.unsubscribe(); // IAM-Custom
-    this.contractTypeSubscription = undefined;
+    // this.contractTypeSubscription?.unsubscribe(); // IAM-Custom (CCC disabled)
+    // this.contractTypeSubscription = undefined; // IAM-Custom (CCC disabled)
     this.entryDateSubscription?.unsubscribe(); // IAM-Custom
     this.entryDateSubscription = undefined;
     this.exitDateControl = undefined;
@@ -188,14 +189,14 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
         return;
       }
       const columns = (this.draftEntityWrapper.parameterCategoryColumns ?? []).map((item) => item.column);
-      // IAM-Custom: the "profile template" question starts on No, so CCC_ProfilTemplate is hidden at first
-      await findColumn(columns, IS_NO_PROFILE_TEMPLATE_COLUMN)?.PutValue(false);
-      if (token !== this.selectionToken) {
-        return;
-      }
+      // IAM-Custom (CCC disabled): the "profile template" question starts on No, so CCC_ProfilTemplate is hidden at first
+      // await findColumn(columns, IS_NO_PROFILE_TEMPLATE_COLUMN)?.PutValue(false);
+      // if (token !== this.selectionToken) {
+      //   return;
+      // }
       this.columns = columns;
-      // IAM-Custom: CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
-      this.contractTypeSubscription = findColumn(columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
+      // IAM-Custom (CCC disabled): CCC_Tutor depends on CCC_ContractType, its control is removed when it gets hidden
+      // this.contractTypeSubscription = findColumn(columns, CONTRACT_TYPE_COLUMN)?.ColumnChanged.subscribe(() => this.removeHiddenControls());
       // IAM-Custom: ExitDate is checked again against the new EntryDate
       this.entryDateSubscription = findColumn(columns, ENTRY_DATE_COLUMN)?.ColumnChanged.subscribe(() =>
         this.exitDateControl?.updateValueAndValidity(),
@@ -286,7 +287,7 @@ export class CreateIdentityComponent implements OnInit, OnDestroy {
       control = new FormControl<boolean>({ value: !!column.GetValue(), disabled: !column.GetMetadata().CanEdit() }, { nonNullable: true });
       control.valueChanges.subscribe((value) => {
         column.PutValue(value);
-        clearDependentColumns(column, this.columns); // IAM-Custom
+        // clearDependentColumns(column, this.columns); // IAM-Custom (CCC disabled)
         this.removeHiddenControls(); // IAM-Custom
       });
       this.booleanControls.set(column.ColumnName, control);

@@ -8,15 +8,16 @@ import { IEntityColumn } from '@imx-modules/imx-qbm-dbts';
 import moment from 'moment';
 import { DATE_CUSTOM_ERROR } from 'qbm';
 
-/** IAM-Custom: CCC_ProfilTemplate is only shown when CCC_IsNoProfileTemplate is set to true. */
-export const PROFILE_TEMPLATE_COLUMN = 'ccc_profiltemplate';
-export const IS_NO_PROFILE_TEMPLATE_COLUMN = 'ccc_isnoprofiletemplate';
-
-/** IAM-Custom: CCC_Tutor is only shown when CCC_ContractType is Alternant ("P") or Stagiaire ("A"). */
-export const TUTOR_COLUMN = 'ccc_tutor';
-export const CONTRACT_TYPE_COLUMN = 'ccc_contracttype';
-// Both the values and the labels are accepted, the request property script compares the labels ("Alternant", "Stagiaire")
-const TRAINEESHIP_CONTRACT_TYPES = ['p', 'a', 'alternant', 'stagiaire'];
+// IAM-Custom (CCC disabled): the CCC_ columns below do not exist in this environment, uncomment to enable these rules.
+// /** IAM-Custom: CCC_ProfilTemplate is only shown when CCC_IsNoProfileTemplate is set to true. */
+// export const PROFILE_TEMPLATE_COLUMN = 'ccc_profiltemplate';
+// export const IS_NO_PROFILE_TEMPLATE_COLUMN = 'ccc_isnoprofiletemplate';
+//
+// /** IAM-Custom: CCC_Tutor is only shown when CCC_ContractType is Alternant ("P") or Stagiaire ("A"). */
+// export const TUTOR_COLUMN = 'ccc_tutor';
+// export const CONTRACT_TYPE_COLUMN = 'ccc_contracttype';
+// // Both the values and the labels are accepted, the request property script compares the labels ("Alternant", "Stagiaire")
+// const TRAINEESHIP_CONTRACT_TYPES = ['p', 'a', 'alternant', 'stagiaire'];
 
 /** IAM-Custom: ExitDate must be at least one day after EntryDate. */
 export const ENTRY_DATE_COLUMN = 'entrydate';
@@ -28,7 +29,7 @@ export const EXIT_DATE_COLUMN = 'exitdate';
  * To hide these fields for another product, move it into one of these categories or add its category here.
  */
 export const HIDE_STANDARD_FIELDS_CATEGORIES = [
-  '2ff73067-6dc3-4561-94b9-2b58ce7a2719', // Identity Creation
+  '93d6a314-488b-4de8-a1f1-2a4d7e49358d', // Identity Creation
   '191a9c3f-154e-4df8-bf72-6c9dc362dfad', // Équipements informatiques
   'ffe5269d-4486-423c-a3e7-a08453e8490a', // Applications
 ];
@@ -39,8 +40,8 @@ export function findColumn(columns: IEntityColumn[], columnName: string): IEntit
 }
 
 /**
- * IAM-Custom: a column is hidden when its display starts with "hidden_",
- * CCC_ProfilTemplate is hidden unless CCC_IsNoProfileTemplate is true,
+ * IAM-Custom: a column is hidden when its display starts with "hidden_".
+ * IAM-Custom (CCC disabled): CCC_ProfilTemplate is hidden unless CCC_IsNoProfileTemplate is true,
  * CCC_Tutor is hidden unless CCC_ContractType is Alternant or Stagiaire.
  * @param booleanControls the Yes/No toggle controls, they hold the latest value while the column may not be updated yet (PutValue is async)
  */
@@ -48,15 +49,16 @@ export function isColumnHidden(column: IEntityColumn, columns: IEntityColumn[], 
   if (column.GetMetadata().GetDisplay()?.startsWith('hidden_')) {
     return true;
   }
-  if (column.ColumnName.toLowerCase() === PROFILE_TEMPLATE_COLUMN) {
-    const driver = findColumn(columns, IS_NO_PROFILE_TEMPLATE_COLUMN);
-    const value = driver ? (booleanControls.get(driver.ColumnName)?.value ?? driver.GetValue()) : undefined;
-    return !(value === true || `${value}`.toLowerCase() === 'true');
-  }
-  if (column.ColumnName.toLowerCase() === TUTOR_COLUMN) {
-    const contractType = `${findColumn(columns, CONTRACT_TYPE_COLUMN)?.GetValue() ?? ''}`.trim().toLowerCase();
-    return !TRAINEESHIP_CONTRACT_TYPES.includes(contractType);
-  }
+  // IAM-Custom (CCC disabled)
+  // if (column.ColumnName.toLowerCase() === PROFILE_TEMPLATE_COLUMN) {
+  //   const driver = findColumn(columns, IS_NO_PROFILE_TEMPLATE_COLUMN);
+  //   const value = driver ? (booleanControls.get(driver.ColumnName)?.value ?? driver.GetValue()) : undefined;
+  //   return !(value === true || `${value}`.toLowerCase() === 'true');
+  // }
+  // if (column.ColumnName.toLowerCase() === TUTOR_COLUMN) {
+  //   const contractType = `${findColumn(columns, CONTRACT_TYPE_COLUMN)?.GetValue() ?? ''}`.trim().toLowerCase();
+  //   return !TRAINEESHIP_CONTRACT_TYPES.includes(contractType);
+  // }
   return false;
 }
 
@@ -77,9 +79,10 @@ export function exitDateValidator(columns: IEntityColumn[]): ValidatorFn {
   };
 }
 
-/** IAM-Custom: clears CCC_ProfilTemplate whenever CCC_IsNoProfileTemplate changes. */
-export function clearDependentColumns(changedColumn: IEntityColumn, columns: IEntityColumn[]): void {
-  if (changedColumn.ColumnName.toLowerCase() === IS_NO_PROFILE_TEMPLATE_COLUMN) {
-    findColumn(columns, PROFILE_TEMPLATE_COLUMN)?.PutValue(undefined);
-  }
-}
+// IAM-Custom (CCC disabled)
+// /** IAM-Custom: clears CCC_ProfilTemplate whenever CCC_IsNoProfileTemplate changes. */
+// export function clearDependentColumns(changedColumn: IEntityColumn, columns: IEntityColumn[]): void {
+//   if (changedColumn.ColumnName.toLowerCase() === IS_NO_PROFILE_TEMPLATE_COLUMN) {
+//     findColumn(columns, PROFILE_TEMPLATE_COLUMN)?.PutValue(undefined);
+//   }
+// }

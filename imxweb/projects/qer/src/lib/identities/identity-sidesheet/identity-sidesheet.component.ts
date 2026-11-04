@@ -64,11 +64,12 @@ import { IdentitiesService } from '../identities.service';
     standalone: false
 })
 export class IdentitySidesheetComponent implements OnInit, OnDestroy {
-  /** Custom column (CCC_ApprovalState) HR uses to approve/reject an identity created via the self-service "Create Identity" flow. */
-  private static readonly approvalStateColumnName = 'CCC_ApprovalState';
-  private static readonly approvalStatePending = '1';
-  private static readonly approvalStateValidated = '0';
-  private static readonly approvalStateRejected = '3';
+  // IAM-Custom (CCC disabled): CCC_ApprovalState does not exist in this environment, uncomment to enable the HR approval popup.
+  // /** Custom column (CCC_ApprovalState) HR uses to approve/reject an identity created via the self-service "Create Identity" flow. */
+  // private static readonly approvalStateColumnName = 'CCC_ApprovalState';
+  // private static readonly approvalStatePending = '1';
+  // private static readonly approvalStateValidated = '0';
+  // private static readonly approvalStateRejected = '3';
 
   @ViewChild('tabs') public tabs: MatTabGroup;
 
@@ -88,7 +89,7 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
   private currentUserUid: string;
   private featureConfig: FeatureConfig;
   private isInactiveHasChanged = false;
-  private approvalStateOnLoad: string | undefined;
+  // private approvalStateOnLoad: string | undefined; // IAM-Custom (CCC disabled)
   /** Form controls for boolean fields, rendered as "Oui/Non" toggles instead of the default checkbox. */
   private readonly booleanControls = new Map<string, FormControl<boolean>>();
 
@@ -224,7 +225,7 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
             ? '#LDS#Your changes have been successfully saved. It may take some time for the changes to take effect.'
             : '#LDS#The changes have been successfully saved.',
         });
-        await this.notifyApprovalStateChange();
+        // await this.notifyApprovalStateChange(); // IAM-Custom (CCC disabled)
         this.closeSidesheet();
       } finally {
         this.busyService.hide(overlayRef);
@@ -232,44 +233,45 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
     }
   }
 
-  private tryGetApprovalState(): string | undefined {
-    const column = CdrFactoryService.tryGetColumn(this.data.selectedIdentity.GetEntity(), IdentitySidesheetComponent.approvalStateColumnName);
-    const value = column?.GetValue();
-    return value == null ? undefined : String(value);
-  }
-
-  private async notifyApprovalStateChange(): Promise<void> {
-    const oldState = this.approvalStateOnLoad;
-    const newState = this.tryGetApprovalState();
-    if (newState == null || oldState === newState) {
-      return;
-    }
-
-    if (
-      (oldState === IdentitySidesheetComponent.approvalStatePending || oldState === IdentitySidesheetComponent.approvalStateRejected) &&
-      newState === IdentitySidesheetComponent.approvalStateValidated
-    ) {
-      await this.confirmationService.confirmGeneral({
-        Title: '#LDS#Identité validée !',
-        Message:
-          '#LDS#Le compte informatique est en cours de création. Vous recevrez un email d’ici quelques minutes contenant le login et l’adresse email.',
-        centerActions: true,
-        customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
-        identifier: 'identity-approval-validated',
-      });
-    } else if (
-      oldState === IdentitySidesheetComponent.approvalStatePending &&
-      newState === IdentitySidesheetComponent.approvalStateRejected
-    ) {
-      await this.confirmationService.confirmGeneral({
-        Title: '#LDS#Identité refusée !',
-        Message: '#LDS#L’identité est refusée, aucun compte informatique ne sera créé.',
-        centerActions: true,
-        customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
-        identifier: 'identity-approval-rejected',
-      });
-    }
-  }
+  // IAM-Custom (CCC disabled)
+  // private tryGetApprovalState(): string | undefined {
+  //   const column = CdrFactoryService.tryGetColumn(this.data.selectedIdentity.GetEntity(), IdentitySidesheetComponent.approvalStateColumnName);
+  //   const value = column?.GetValue();
+  //   return value == null ? undefined : String(value);
+  // }
+  //
+  // private async notifyApprovalStateChange(): Promise<void> {
+  //   const oldState = this.approvalStateOnLoad;
+  //   const newState = this.tryGetApprovalState();
+  //   if (newState == null || oldState === newState) {
+  //     return;
+  //   }
+  //
+  //   if (
+  //     (oldState === IdentitySidesheetComponent.approvalStatePending || oldState === IdentitySidesheetComponent.approvalStateRejected) &&
+  //     newState === IdentitySidesheetComponent.approvalStateValidated
+  //   ) {
+  //     await this.confirmationService.confirmGeneral({
+  //       Title: '#LDS#Identité validée !',
+  //       Message:
+  //         '#LDS#Le compte informatique est en cours de création. Vous recevrez un email d’ici quelques minutes contenant le login et l’adresse email.',
+  //       centerActions: true,
+  //       customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
+  //       identifier: 'identity-approval-validated',
+  //     });
+  //   } else if (
+  //     oldState === IdentitySidesheetComponent.approvalStatePending &&
+  //     newState === IdentitySidesheetComponent.approvalStateRejected
+  //   ) {
+  //     await this.confirmationService.confirmGeneral({
+  //       Title: '#LDS#Identité refusée !',
+  //       Message: '#LDS#L’identité est refusée, aucun compte informatique ne sera créé.',
+  //       centerActions: true,
+  //       customButtons: [{ title: '#LDS#OK', action: MessageDialogResult.OkResult, type: 'primary' }],
+  //       identifier: 'identity-approval-rejected',
+  //     });
+  //   }
+  // }
 
   public async onIsSecurityIncidentToggleChanged(toggleChange: MatSlideToggleChange): Promise<void> {
     const message = this.data.selectedIdentity.IsSecurityIncident.value
@@ -421,7 +423,7 @@ export class IdentitySidesheetComponent implements OnInit, OnDestroy {
     this.detailsFormGroup.addControl(this.data.selectedIdentity.IsSecurityIncident.Column.ColumnName, this.isSecurityIncidentFormControl);
     this.detailsFormGroup.markAsPristine();
 
-    this.approvalStateOnLoad = this.tryGetApprovalState();
+    // this.approvalStateOnLoad = this.tryGetApprovalState(); // IAM-Custom (CCC disabled)
 
     const personalColumns = this.data.projectConfig.PersonConfig?.VI_Employee_MasterData_Attributes || [];
     this.cdrListPersonal = this.cdrFactoryService.buildCdrFromColumnList(
